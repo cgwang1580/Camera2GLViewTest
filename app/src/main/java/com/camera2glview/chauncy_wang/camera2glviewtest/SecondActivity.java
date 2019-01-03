@@ -1,11 +1,7 @@
 package com.camera2glview.chauncy_wang.camera2glviewtest;
 
-/**
-* create by cgwang1580 on 2018/1/3
-* a simple app for camera2 preview
-*/
-
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
@@ -21,10 +17,9 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
+import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
@@ -37,12 +32,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements TextureView.SurfaceTextureListener {
+public class SecondActivity extends Activity{
 
-    private static final String TAG = "MainActivity";
+    private static final String TAG = "SecondActivity";
 
     private CameraManager mCameraManager;
-    private TextureView mTextureView;
     private String mCameraId;
     private Size mPreviewSize;
     private CameraDevice mCameraDevice;
@@ -50,6 +44,9 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
     private CaptureRequest mCaptureRequest;
     private CameraCaptureSession mPreviewSession;
     private ImageReader mPreviewImageReader;
+
+    private MyGLSurfaceView mMyGLSurfaceView;
+    private SurfaceTexture mSurfaceTexture;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,43 +57,21 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        setContentView(R.layout.activity_main);
+        mMyGLSurfaceView = new MyGLSurfaceView(this);
+
+        setContentView(mMyGLSurfaceView);
 
         // Query camera authority dynamically
-        if (PackageManager.PERMISSION_GRANTED != ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)){
-            ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.CAMERA}, 1);
+        if (PackageManager.PERMISSION_GRANTED != ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 1);
         }
 
         // Query read and write storage authority
         if (PackageManager.PERMISSION_GRANTED != ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                || PackageManager.PERMISSION_GRANTED != ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)){
-            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                || PackageManager.PERMISSION_GRANTED != ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
                     Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
         }
-
-        mTextureView = findViewById(R.id.cam_texture_view);
-        mTextureView.setSurfaceTextureListener(this);
-    }
-
-
-    @Override
-    public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-        setupCamera (width, height);
-        openCamera ();
-    }
-
-    @Override
-    public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-
-    }
-
-    @Override
-    public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-        return false;
-    }
-
-    @Override
-    public void onSurfaceTextureUpdated(SurfaceTexture surface) {
 
     }
 
@@ -174,30 +149,15 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
 
     private void startPreview () {
 
-        mPreviewImageReader = ImageReader.newInstance(mPreviewSize.getWidth(), mPreviewSize.getHeight(),
-                ImageFormat.YUV_420_888, 2);
-        mPreviewImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
-            @Override
-            public void onImageAvailable(ImageReader reader) {
-                Image image = reader.acquireLatestImage();
-                Log.d(TAG, "onImageAvailable");
-                image.close();
-            }
-        }, null);
-
-        SurfaceTexture surfaceTexture = mTextureView.getSurfaceTexture();
         // set default buffer size for preview
-        surfaceTexture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-        Surface surface = new Surface(surfaceTexture);
-        Surface imageReaderSurface = mPreviewImageReader.getSurface();
+        mSurfaceTexture.setDefaultBufferSize(1080, 1440);
+        Surface surface = new Surface(mSurfaceTexture);
 
         try {
             mCaptureBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
 
             mCaptureBuilder.addTarget(surface);
-            mCaptureBuilder.addTarget(imageReaderSurface);
-
-            mCameraDevice.createCaptureSession(Arrays.asList(surface, imageReaderSurface), new CameraCaptureSession.StateCallback() {
+            mCameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(CameraCaptureSession session) {
                     mCaptureRequest = mCaptureBuilder.build();
@@ -247,4 +207,5 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
             e.printStackTrace();
         }
     }
+
 }
