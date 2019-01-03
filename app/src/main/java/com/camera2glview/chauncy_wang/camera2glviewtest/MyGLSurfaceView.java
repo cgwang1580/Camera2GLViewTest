@@ -5,12 +5,15 @@ import android.opengl.GLSurfaceView;
 
 public class MyGLSurfaceView extends GLSurfaceView {
 
-    MyGLRenderer myGLRenderer;
+    private final MyGLRenderer myGLRenderer;
 
     public MyGLSurfaceView (Context context){
         super(context);
 
+        setEGLContextClientVersion(3);
         myGLRenderer = new MyGLRenderer();
+        setRenderer(myGLRenderer);
 
+        setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
     }
 }
