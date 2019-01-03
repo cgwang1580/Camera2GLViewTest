@@ -3,6 +3,7 @@ package com.camera2glview.chauncy_wang.camera2glviewtest;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -13,15 +14,16 @@ import android.hardware.camera2.CaptureFailure;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.Image;
+import android.media.ImageReader;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.PermissionChecker;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 import android.view.TextureView;
-import android.view.Window;
 import android.view.WindowManager;
 
 import java.util.ArrayList;
@@ -37,6 +39,8 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements TextureView.SurfaceTextureListener {
 
+    private static final String TAG = "MainActivity";
+
     private CameraManager mCameraManager;
     private TextureView mTextureView;
     private String mCameraId;
@@ -45,12 +49,12 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
     private CaptureRequest.Builder mCaptureBuilder;
     private CaptureRequest mCaptureRequest;
     private CameraCaptureSession mPreviewSession;
+    private ImageReader mPreviewImageReader;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // set no action bar
-        //requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
@@ -166,18 +170,33 @@ public class MainActivity extends AppCompatActivity implements TextureView.Surfa
         }
     };
 
+
     private void startPreview () {
+
+        mPreviewImageReader = ImageReader.newInstance(mPreviewSize.getWidth(), mPreviewSize.getHeight(),
+                ImageFormat.YUV_420_888, 2);
+        mPreviewImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
+            @Override
+            public void onImageAvailable(ImageReader reader) {
+                Image image = reader.acquireLatestImage();
+                Log.d(TAG, "onImageAvailable");
+                image.close();
+            }
+        }, null);
+
         SurfaceTexture surfaceTexture = mTextureView.getSurfaceTexture();
         // set default buffer size for preview
         surfaceTexture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
         Surface surface = new Surface(surfaceTexture);
+        Surface imageReaderSurface = mPreviewImageReader.getSurface();
 
         try {
             mCaptureBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
 
             mCaptureBuilder.addTarget(surface);
+            mCaptureBuilder.addTarget(imageReaderSurface);
 
-            mCameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
+            mCameraDevice.createCaptureSession(Arrays.asList(surface, imageReaderSurface), new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(CameraCaptureSession session) {
                     mCaptureRequest = mCaptureBuilder.build();
