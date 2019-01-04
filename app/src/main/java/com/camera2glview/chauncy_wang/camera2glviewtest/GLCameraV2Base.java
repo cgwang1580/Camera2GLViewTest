@@ -18,6 +18,8 @@ import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.ImageReader;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -37,6 +39,9 @@ public class GLCameraV2Base {
     private Context mContext;
     private Activity mActivity;
 
+    private HandlerThread mCameraThread;
+    private Handler mCameraHandler;
+
     private CameraManager mCameraManager;
     private String mCameraId;
     private Size mPreviewSize;
@@ -49,6 +54,13 @@ public class GLCameraV2Base {
     public GLCameraV2Base (Context context, Activity activity){
         mContext = context;
         mActivity = activity;
+        startCameraThread();
+    }
+
+    public void startCameraThread () {
+        mCameraThread = new HandlerThread("CameraThread");
+        mCameraThread.start();
+        mCameraHandler = new Handler(mCameraThread.getLooper());
     }
 
     /**
@@ -93,7 +105,7 @@ public class GLCameraV2Base {
      * this function to open camera but not start preview
      * @return true if openCamera succeeded
      */
-    private boolean openCamera(){
+    public boolean openCamera(){
         try {
             if (PackageManager.PERMISSION_GRANTED != ActivityCompat.checkSelfPermission(mContext, Manifest.permission.CAMERA)){
                 return false;
@@ -115,7 +127,7 @@ public class GLCameraV2Base {
                     camera.close();
                     mCameraDevice = null;
                 }
-            }, null);
+            }, mCameraHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
             return false;
@@ -148,7 +160,7 @@ public class GLCameraV2Base {
                     mCaptureRequest = mCaptureRequestBuilder.build();
                     mCameraPreviewSession = session;
                     try {
-                        mCameraPreviewSession.setRepeatingRequest(mCaptureRequest, null, null);
+                        mCameraPreviewSession.setRepeatingRequest(mCaptureRequest, null, mCameraHandler);
                     } catch (CameraAccessException e) {
                         e.printStackTrace();
                     }
@@ -158,7 +170,7 @@ public class GLCameraV2Base {
                 public void onConfigureFailed(CameraCaptureSession session) {
 
                 }
-            }, null);
+            }, mCameraHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
             return false;

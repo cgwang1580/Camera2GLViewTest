@@ -17,7 +17,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" >
-        <activity android:name=".SecondActivity">
+        <activity android:name=".CameraV2GLSurfaceActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
