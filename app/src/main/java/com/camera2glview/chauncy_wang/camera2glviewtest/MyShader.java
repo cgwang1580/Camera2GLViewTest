@@ -6,13 +6,24 @@ package com.camera2glview.chauncy_wang.camera2glviewtest;
  */
 
 import android.opengl.GLES11Ext;
-import android.opengl.GLES30;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
 import javax.microedition.khronos.opengles.GL10;
+
+import static android.opengl.GLES20.glAttachShader;
+import static android.opengl.GLES20.glBindTexture;
+import static android.opengl.GLES20.glCompileShader;
+import static android.opengl.GLES20.glCreateProgram;
+import static android.opengl.GLES20.glCreateShader;
+import static android.opengl.GLES20.glGenTextures;
+import static android.opengl.GLES20.glGetError;
+import static android.opengl.GLES20.glLinkProgram;
+import static android.opengl.GLES20.glShaderSource;
+import static android.opengl.GLES20.glTexParameterf;
+import static android.opengl.GLES20.glUseProgram;
 
 public class MyShader {
 
@@ -70,20 +81,20 @@ public class MyShader {
     public static int createOESTextureObject (){
         int[] tex = new int[1];
         // create a texture
-        GLES30.glGenTextures(1, tex, 0);
+        glGenTextures(1, tex, 0);
         // bind this texture to a external texture
-        GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, tex[0]);
+        glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, tex[0]);
         // set texture filter parameters
-        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+        glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
                 GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_NEAREST);
-        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+        glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
                 GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
-        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+        glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
                 GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
-        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+        glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
                 GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
         // unbind texture
-        GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
+        glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
         return tex[0];
     }
 
@@ -104,14 +115,14 @@ public class MyShader {
     public static int loadShader (int type, String shaderSource){
 
         // create shader
-        int shader = GLES30.glCreateShader(type);
+        int shader = glCreateShader(type);
         if (0 == shader){
-            throw new RuntimeException("Create Shader Failed!" + GLES30.glGetError());
+            throw new RuntimeException("Create Shader Failed!" + glGetError());
         }
         // load shader
-        GLES30.glShaderSource(shader, shaderSource);
+        glShaderSource(shader, shaderSource);
         // compile shader
-        GLES30.glCompileShader(shader);
+        glCompileShader(shader);
         return shader;
     }
 
@@ -123,17 +134,17 @@ public class MyShader {
      */
     public static int linkProgram (int verShader, int fragShader) {
         // create program
-        int program = GLES30.glCreateProgram();
+        int program = glCreateProgram();
         if (0 == program){
-            throw new RuntimeException("Create program failed!" + GLES30.glGetError());
+            throw new RuntimeException("Create program failed!" + glGetError());
         }
         // attach vertex and fragment
-        GLES30.glAttachShader(program, verShader);
-        GLES30.glAttachShader(program, fragShader);
+        glAttachShader(program, verShader);
+        glAttachShader(program, fragShader);
         // link vertex and fragment shader
-        GLES30.glLinkProgram(program);
+        glLinkProgram(program);
         // tele opengl es to use this program
-        GLES30.glUseProgram(program);
+        glUseProgram(program);
         return program;
     }
 }

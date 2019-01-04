@@ -2,8 +2,6 @@ package com.camera2glview.chauncy_wang.camera2glviewtest;
 
 import android.content.Context;
 import android.graphics.SurfaceTexture;
-import android.opengl.GLES11Ext;
-import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
 
@@ -12,8 +10,25 @@ import java.nio.FloatBuffer;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import static android.opengl.GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
+import static android.opengl.GLES20.GL_FLOAT;
+import static android.opengl.GLES20.GL_FRAMEBUFFER;
+import static android.opengl.GLES20.GL_TRIANGLES;
 import static android.opengl.GLES20.GL_VERTEX_SHADER;
+import static android.opengl.GLES20.glActiveTexture;
+import static android.opengl.GLES20.glBindBuffer;
+import static android.opengl.GLES20.glBindFramebuffer;
+import static android.opengl.GLES20.glBindTexture;
+import static android.opengl.GLES20.glClearColor;
+import static android.opengl.GLES20.glDrawArrays;
+import static android.opengl.GLES20.glEnableVertexAttribArray;
+import static android.opengl.GLES20.glGenFramebuffers;
+import static android.opengl.GLES20.glGetAttribLocation;
 import static android.opengl.GLES20.glGetUniformLocation;
+import static android.opengl.GLES20.glUniform1i;
+import static android.opengl.GLES20.glUniformMatrix4fv;
+import static android.opengl.GLES20.glVertexAttribPointer;
+import static android.opengl.GLES20.glViewport;
 
 public class MyGLRenderer implements GLSurfaceView.Renderer {
 
@@ -35,6 +50,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
     private int aTextureCoordLocation;
     private int uTextureMatrixLocation;
     private int uTextureSamplerLocation;
+    private int[] mFBOIds = new int[1];
 
 
     public void init (MyGLSurfaceView myGLSurfaceView, GLCameraV2Base glCameraV2Base, boolean isPreviewStart, Context context){
@@ -49,15 +65,19 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         Log.d(TAG, "onSurfaceCreated");
         mOESTextureId = MyShader.createOESTextureObject();
-
+        mDataBuffer = MyShader.createBuffer(MyShader.vertexDate);
         mVertexShader = MyShader.loadShader(GL_VERTEX_SHADER, MyShader.VERTEX_SHADER);
         mFragShader = MyShader.loadShader(GL_VERTEX_SHADER, MyShader.FRAGMENT_SHADER);
         mShaderProgram = MyShader.linkProgram(mVertexShader, mFragShader);
+
+        glGenFramebuffers(1, mFBOIds, 0);
+        glBindBuffer(GL_FRAMEBUFFER, mFBOIds[0]);
+        Log.i(TAG, "onSurfaceCreated: mFBOId: " + mFBOIds[0]);
     }
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-        GLES30.glViewport(0, 0, width, height);
+        glViewport(0, 0, width, height);
         Log.d(TAG, "View port width = " + width + " height = " + height);
     }
 
@@ -73,7 +93,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 
         if (!mIsPreviewStart){
             mIsPreviewStart = initSurfaceTexture();
-            //mIsPreviewStart = true;
+            mIsPreviewStart = true;
             return;
         }
 
@@ -107,41 +127,44 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 
     public void drawImage (){
 
-        GLES30.glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
+        glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
 
-        aPositionLocation = GLES30.glGetAttribLocation(mShaderProgram, "aPosition");
-        aTextureCoordLocation = GLES30.glGetAttribLocation(mShaderProgram, "aTextureCoordinate");
+        aPositionLocation = glGetAttribLocation(mShaderProgram, "aPosition");
+        aTextureCoordLocation = glGetAttribLocation(mShaderProgram, "aTextureCoordinate");
         uTextureMatrixLocation = glGetUniformLocation(mShaderProgram, "uTextureMatrix");
         uTextureSamplerLocation = glGetUniformLocation(mShaderProgram, "uTextureSampler");
 
         //激活纹理单元0
-        GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE_EXTERNAL_OES);
         //绑定外部纹理到纹理单元0
-        GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mOESTextureId);
+        glBindTexture(GL_TEXTURE_EXTERNAL_OES, mOESTextureId);
         //将此纹理单元床位片段着色器的uTextureSampler外部纹理采样器
-        GLES30.glUniform1i(uTextureSamplerLocation, 0);
+        glUniform1i(uTextureSamplerLocation, 0);
 
         //将纹理矩阵传给片段着色器
-        GLES30.glUniformMatrix4fv(uTextureMatrixLocation, 1, false, mTransformMatrix, 0);
+        glUniformMatrix4fv(uTextureMatrixLocation, 1, false, mTransformMatrix, 0);
 
         //将顶点和纹理坐标传给顶点着色器
         if (mDataBuffer != null) {
             //顶点坐标从位置0开始读取
             mDataBuffer.position(0);
             //使能顶点属性
-            GLES30.glEnableVertexAttribArray(aPositionLocation);
+            glEnableVertexAttribArray(aPositionLocation);
             //顶点坐标每次读取两个顶点值，之后间隔16（每行4个值 * 4个字节）的字节继续读取两个顶点值
-            GLES30.glVertexAttribPointer(aPositionLocation, 2, GLES30.GL_FLOAT, false, 16, mDataBuffer);
+            glVertexAttribPointer(aPositionLocation, 2, GL_FLOAT, false, 16, mDataBuffer);
 
             //纹理坐标从位置2开始读取
             mDataBuffer.position(2);
-            GLES30.glEnableVertexAttribArray(aTextureCoordLocation);
+            glEnableVertexAttribArray(aTextureCoordLocation);
         // 纹理坐标每次读取两个顶点值，之后间隔16（每行4个值 * 4个字节）的字节继续读取两个顶点值
-            GLES30.glVertexAttribPointer(aTextureCoordLocation, 2, GLES30.GL_FLOAT, false, 16, mDataBuffer);
+            glVertexAttribPointer(aTextureCoordLocation, 2, GL_FLOAT, false, 16, mDataBuffer);
         }
 
-        //绘制两个三角形（6个顶点）
-        GLES30.glDrawArrays(GLES30.GL_TRIANGLES, 0, 6);
+        //glDrawElements(GL_TRIANGLE_FAN, 6,GL_UNSIGNED_INT, 0);
+        //glDrawArrays(GL_TRIANGLE_FAN, 0 , 6);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        //glDrawArrays(GL_TRIANGLES, 3, 3);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
 }

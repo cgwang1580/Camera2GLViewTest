@@ -12,7 +12,7 @@ public class MyGLSurfaceView extends GLSurfaceView {
     }
 
     public void init (GLCameraV2Base glCameraV2Base, boolean isPreviewStart, Context context){
-        setEGLContextClientVersion(3);
+        setEGLContextClientVersion(2);
         myGLRenderer = new MyGLRenderer();
         myGLRenderer.init (this, glCameraV2Base, isPreviewStart, context);
         setRenderer(myGLRenderer);
