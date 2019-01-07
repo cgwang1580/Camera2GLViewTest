@@ -9,6 +9,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -17,15 +18,23 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.Image;
 import android.media.ImageReader;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.provider.ContactsContract;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,6 +44,8 @@ import java.util.List;
 public class GLCameraV2Base {
 
     private static final String TAG = "CameraV2";
+
+    private int saveIndex = 0;
 
     private Context mContext;
     private Activity mActivity;
@@ -149,12 +160,37 @@ public class GLCameraV2Base {
      */
     public boolean startPreview () {
 
+        //----------------create ImageReader object to test image data begin----------------//
+        ImageReader imageReader = ImageReader.newInstance(mPreviewSize.getWidth(),
+                mPreviewSize.getHeight(), ImageFormat.JPEG, 2);
+        imageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
+            @Override
+            public void onImageAvailable(ImageReader reader) {
+                //Image image = reader.acquireLatestImage();
+                /*Log.d(TAG, "onImageAvailable");
+                ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+                byte[] bytes = new byte[buffer.remaining()];
+                buffer.get(bytes);*/
+
+                mCameraHandler.post(new ImageSaver(reader.acquireLatestImage(), saveIndex));
+                saveIndex++;
+
+                //image.close();
+            }
+        }, mCameraHandler);
+        Surface imageReaderSurface = imageReader.getSurface();
+        //-----------------create ImageReader object to test image data end-----------------//
+
+
         mSurfaceTexture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
         Surface surface = new Surface(mSurfaceTexture);
         try {
             mCaptureRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             mCaptureRequestBuilder.addTarget(surface);
-            mCameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
+
+            mCaptureRequestBuilder.addTarget(imageReaderSurface);
+
+            mCameraDevice.createCaptureSession(Arrays.asList(surface, imageReaderSurface), new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(CameraCaptureSession session) {
                     mCaptureRequest = mCaptureRequestBuilder.build();
@@ -190,6 +226,43 @@ public class GLCameraV2Base {
                 || PackageManager.PERMISSION_GRANTED != ContextCompat.checkSelfPermission(mContext, Manifest.permission.READ_EXTERNAL_STORAGE)){
             ActivityCompat.requestPermissions(mActivity, new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE,
                     Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+        }
+    }
+
+    public static class ImageSaver implements Runnable {
+        private Image mImage;
+        private int mSaveIndex;
+        public ImageSaver (Image image, int index){
+            mImage = image;
+            mSaveIndex = index;
+        }
+
+        @Override
+        public void run () {
+            Log.d("ImageSaver", "run");
+            ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
+            byte[] data = new byte[buffer.remaining()];
+            buffer.get(data);
+            File mImageFile = new File(Environment.getExternalStorageDirectory()
+                    + "/DCIM/MyCapture/myPicture_" + mSaveIndex +".jpg");
+            FileOutputStream fos = null;
+            try {
+                fos = new FileOutputStream(mImageFile);
+                fos.write(data, 0 ,data.length);
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                mImageFile = null;
+                if (fos != null) {
+                    try {
+                        fos.close();
+                        fos = null;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            mImage.close();
         }
     }
 

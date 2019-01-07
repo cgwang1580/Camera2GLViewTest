@@ -1,7 +1,6 @@
 package com.camera2glview.chauncy_wang.camera2glviewtest;
 
 import android.app.Activity;
-import android.graphics.SurfaceTexture;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 
@@ -27,6 +26,16 @@ public class CameraV2GLSurfaceActivity extends Activity {
         }
         mMyGLSurfaceView = new MyGLSurfaceView(this);
         mMyGLSurfaceView.init(mCameraBase, false, CameraV2GLSurfaceActivity.this);
+    }
+
+    @Override
+    protected void onResume (){
+        super.onResume();
+    }
+
+    @Override
+    protected void onDestroy (){
+        super.onDestroy();
     }
 
 }

@@ -6,6 +6,7 @@ package com.camera2glview.chauncy_wang.camera2glviewtest;
  */
 
 import android.opengl.GLES11Ext;
+import android.opengl.GLES20;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -14,26 +15,23 @@ import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
 import static android.opengl.GLES20.glAttachShader;
-import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glCompileShader;
 import static android.opengl.GLES20.glCreateProgram;
 import static android.opengl.GLES20.glCreateShader;
-import static android.opengl.GLES20.glGenTextures;
 import static android.opengl.GLES20.glGetError;
 import static android.opengl.GLES20.glLinkProgram;
 import static android.opengl.GLES20.glShaderSource;
-import static android.opengl.GLES20.glTexParameterf;
 import static android.opengl.GLES20.glUseProgram;
 
 public class MyShader {
 
     public static final float[] vertexDate = {
             1f, 1f, 1f, 1f,
-            -1f,  1f,  0f,  1f,
-            -1f, -1f,  0f,  0f,
-            1f,  1f,  1f,  1f,
-            -1f, -1f,  0f,  0f,
-            1f, -1f,  1f,  0f
+            -1f, 1f, 0f, 1f,
+            -1f, -1f, 0f, 0f,
+            1f, 1f, 1f, 1f,
+            -1f, -1f, 0f, 0f,
+            1f, -1f, 1f, 0f
     };
 
     public static final String VERTEX_SHADER = "" +
@@ -78,23 +76,19 @@ public class MyShader {
      * create outside texture
      * @return
      */
-    public static int createOESTextureObject (){
+    public static int createOESTextureObject() {
         int[] tex = new int[1];
-        // create a texture
-        glGenTextures(1, tex, 0);
-        // bind this texture to a external texture
-        glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, tex[0]);
-        // set texture filter parameters
-        glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+        GLES20.glGenTextures(1, tex, 0);
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, tex[0]);
+        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
                 GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_NEAREST);
-        glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
                 GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
-        glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
                 GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
-        glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
                 GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
-        // unbind texture
-        glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
         return tex[0];
     }
 
