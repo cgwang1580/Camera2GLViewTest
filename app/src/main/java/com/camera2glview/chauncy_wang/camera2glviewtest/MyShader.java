@@ -2,18 +2,15 @@ package com.camera2glview.chauncy_wang.camera2glviewtest;
 
 /**
  * create by cgwang1580 on 2019/1/4
- * this class will create some shader relative work
+ * this class will do some shader relative work
  */
 
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-
 import javax.microedition.khronos.opengles.GL10;
-
 import static android.opengl.GLES20.glAttachShader;
 import static android.opengl.GLES20.glCompileShader;
 import static android.opengl.GLES20.glCreateProgram;
@@ -61,11 +58,12 @@ public class MyShader {
             "{\n" +
             //获取此纹理（预览图像）对应坐标的颜色值
             "  vec4 vCameraColor = texture2D(uTextureSampler, vTextureCoord);\n" +
-            //求此颜色的灰度值
-            "  float fGrayColor = (0.3*vCameraColor.r + 0.59*vCameraColor.g + 0.11*vCameraColor.b);\n" +
             //将此灰度值作为输出颜色的RGB值，这样就会变成黑白滤镜
-            "  gl_FragColor = vec4(fGrayColor, fGrayColor, fGrayColor, 1.0);\n" +
+            "  gl_FragColor = vec4(vCameraColor.r, vCameraColor.g, vCameraColor.b, 1.0);\n" +
             "}\n";
+
+    ////求此颜色的灰度值
+    //            "  float fGrayColor = (0.3*vCameraColor.r + 0.59*vCameraColor.g + 0.11*vCameraColor.b);\n" +
 
 
     public MyShader (){

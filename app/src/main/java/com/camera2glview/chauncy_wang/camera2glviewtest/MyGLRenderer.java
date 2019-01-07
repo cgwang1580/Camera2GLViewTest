@@ -2,6 +2,7 @@ package com.camera2glview.chauncy_wang.camera2glviewtest;
 
 import android.content.Context;
 import android.graphics.SurfaceTexture;
+import android.opengl.GLES11Ext;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
 
@@ -16,7 +17,6 @@ import static android.opengl.GLES20.GL_FRAMEBUFFER;
 import static android.opengl.GLES20.GL_TRIANGLES;
 import static android.opengl.GLES20.GL_VERTEX_SHADER;
 import static android.opengl.GLES20.glActiveTexture;
-import static android.opengl.GLES20.glBindBuffer;
 import static android.opengl.GLES20.glBindFramebuffer;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glClearColor;
@@ -71,7 +71,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
         mShaderProgram = MyShader.linkProgram(mVertexShader, mFragShader);
 
         glGenFramebuffers(1, mFBOIds, 0);
-        glBindBuffer(GL_FRAMEBUFFER, mFBOIds[0]);
+        glBindFramebuffer(GL_FRAMEBUFFER, mFBOIds[0]);
         Log.i(TAG, "onSurfaceCreated: mFBOId: " + mFBOIds[0]);
     }
 
@@ -84,6 +84,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
     @Override
     public void onDrawFrame(GL10 gl) {
 
+        Log.d(TAG, "onDrawFrame");
         if (null != mSurfaceTexture){
             // update texture image
             mSurfaceTexture.updateTexImage();
@@ -96,7 +97,6 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
             mIsPreviewStart = true;
             return;
         }
-
         drawImage();
     }
 
@@ -117,6 +117,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
         mSurfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
             @Override
             public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+                Log.d(TAG, "onFrameAvailable");
                 mCameraV2GLSurfaceView.requestRender();
             }
         });
@@ -136,9 +137,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 
         //激活纹理单元0
         glActiveTexture(GL_TEXTURE_EXTERNAL_OES);
-        //绑定外部纹理到纹理单元0
-        glBindTexture(GL_TEXTURE_EXTERNAL_OES, mOESTextureId);
-        //将此纹理单元床位片段着色器的uTextureSampler外部纹理采样器
+        glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mOESTextureId);
         glUniform1i(uTextureSamplerLocation, 0);
 
         //将纹理矩阵传给片段着色器

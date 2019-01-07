@@ -23,17 +23,14 @@ import android.media.ImageReader;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.provider.ContactsContract;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,6 +42,7 @@ public class GLCameraV2Base {
 
     private static final String TAG = "CameraV2";
 
+    // record image index to be saved
     private int saveIndex = 0;
 
     private Context mContext;
@@ -156,7 +154,7 @@ public class GLCameraV2Base {
 
     /**
      * start camera preview
-     * @return
+     * @return if well return true, else return false
      */
     public boolean startPreview () {
 
@@ -166,31 +164,21 @@ public class GLCameraV2Base {
         imageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
             @Override
             public void onImageAvailable(ImageReader reader) {
-                //Image image = reader.acquireLatestImage();
-                /*Log.d(TAG, "onImageAvailable");
-                ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                byte[] bytes = new byte[buffer.remaining()];
-                buffer.get(bytes);*/
-
-                mCameraHandler.post(new ImageSaver(reader.acquireLatestImage(), saveIndex));
+                // save image in a new thread
+                //mCameraHandler.post(new ImageSaver(reader.acquireLatestImage(), saveIndex));
                 saveIndex++;
-
-                //image.close();
             }
         }, mCameraHandler);
         Surface imageReaderSurface = imageReader.getSurface();
         //-----------------create ImageReader object to test image data end-----------------//
-
 
         mSurfaceTexture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
         Surface surface = new Surface(mSurfaceTexture);
         try {
             mCaptureRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             mCaptureRequestBuilder.addTarget(surface);
-
-            mCaptureRequestBuilder.addTarget(imageReaderSurface);
-
-            mCameraDevice.createCaptureSession(Arrays.asList(surface, imageReaderSurface), new CameraCaptureSession.StateCallback() {
+            //mCaptureRequestBuilder.addTarget(imageReaderSurface);
+            mCameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(CameraCaptureSession session) {
                     mCaptureRequest = mCaptureRequestBuilder.build();

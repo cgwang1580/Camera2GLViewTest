@@ -16,6 +16,6 @@ public class MyGLSurfaceView extends GLSurfaceView {
         myGLRenderer = new MyGLRenderer();
         myGLRenderer.init (this, glCameraV2Base, isPreviewStart, context);
         setRenderer(myGLRenderer);
-        //setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+        setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
     }
 }
